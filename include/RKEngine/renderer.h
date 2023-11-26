@@ -1,20 +1,11 @@
-#include <GLFW/glfw3.h>
-#include <cstdint>
-#include <string>
-
+#pragma once
 
 namespace RKEngine
 {
   class Renderer
   {
   public:
-    Renderer(const uint32_t& window_width, const uint32_t& window_height, const std::string& window_title);
-    ~Renderer();
-
-    bool window_should_close();
-    void draw();
-
-  private:
-    GLFWwindow *m_window;
+    virtual void draw() = 0;
+    virtual bool window_should_close() = 0;
   };
 }

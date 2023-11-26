@@ -1,12 +1,16 @@
-#include <RKEngine/renderer.h>
+#include "RKEngine/renderer_factory.h"
+#include <GLFW/glfw3.h>
+#include <iostream>
 
 
 int main()
 {
-  RKEngine::Renderer renderer(800, 600, "Hello, Window!");
-  while (!renderer.window_should_close())
+  auto renderer = RKEngine::RendererFactory::create_renderer();
+
+  while (!renderer->window_should_close())
   {
-    renderer.draw();
+    renderer->draw();
   }
+  
   return 0;
 }
