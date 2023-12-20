@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.24)
 
 project(RKEngine VERSION 0.1)
 
@@ -20,15 +20,10 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-message(STATUS "Checking for Vulkan SDK")
-if (NOT DEFINED ENV{VULKAN_SDK})
-  message(FATAL_ERROR "VULKAN_SDK environment variable is not set")
+find_package(Vulkan REQUIRED FATAL_ERROR)
+if(NOT Vulkan_FOUND)
+  message(FATAL_ERROR "Vulkan not found")
 endif()
-message(STATUS "VULKAN SDK found at $ENV{VULKAN_SDK}")
-
-message(STATUS "Getting Vulkan lib path")
-file(TO_CMAKE_PATH "$ENV{VK_SDK_PATH}/Lib/vulkan-1.lib" VK_LIB_PATH)
-message(STATUS "Vulkan lib path is ${VK_LIB_PATH}")
 
 add_library(RKEngine STATIC
   ${PROJECT_SOURCE_DIR}/src/renderer.cpp
@@ -40,13 +35,13 @@ target_include_directories(
   RKEngine 
   PUBLIC ${PROJECT_SOURCE_DIR}/include
   PUBLIC ${glfw_SOURCE_DIR}/include
-  PUBLIC $ENV{VK_SDK_PATH}/Include
+  PUBLIC ${Vulkan_INCLUDE_DIRS}
 )
 
 target_link_libraries(
   RKEngine 
   PRIVATE glfw
-  PRIVATE ${VK_LIB_PATH}
+  PRIVATE ${Vulkan_LIBRARIES}
 )
 
 add_subdirectory(examples)
