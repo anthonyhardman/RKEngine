@@ -1,6 +1,2 @@
-#include <iostream>
-#include <cstring>
-#include <algorithm>
-
-#include "RkEngine/renderer.h"
+#include "RKEngine/renderer.h"
 #include <stdexcept>
