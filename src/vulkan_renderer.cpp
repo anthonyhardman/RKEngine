@@ -7,9 +7,9 @@
 #include "RKEngine/vulkan_renderer.h"
 
 #ifdef NDEBUG
-const bool enable_validation_layers = false;
+constexpr bool enable_validation_layers = false;
 #else
-const bool enable_validation_layers = true;
+constexpr bool enable_validation_layers = true;
 #endif
 
 const std::vector<const char *> get_required_extensions();
@@ -42,6 +42,7 @@ RKEngine::VulkanRenderer::~VulkanRenderer()
 {
   destroy_debug_messenger();
   destroy_instance();
+  destroy_window();
 }
 
 
