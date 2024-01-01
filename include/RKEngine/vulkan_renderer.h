@@ -37,5 +37,7 @@ namespace RKEngine
     void destroy_debug_messenger();
     std::vector<VkPhysicalDevice> get_list_of_physical_devices();
     void pick_physical_device();
+    void create_logical_device();
+    void destroy_logical_device();
   };
 }

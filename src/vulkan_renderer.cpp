@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cstring>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -28,6 +29,7 @@ void destroy_debug_utils_messenger_ext(VkInstance instance,
                                        VkDebugUtilsMessengerEXT debug_messenger,
                                        const VkAllocationCallbacks *p_allocator);
 const bool is_device_suitable(VkPhysicalDevice device);
+const std::optional<size_t> find_queue_family_index(VkPhysicalDevice device, VkQueueFlagBits queue_flag);
 
 RKEngine::VulkanRenderer::VulkanRenderer(const uint32_t &window_width, const uint32_t window_height, const std::string &window_title)
     : m_window_width(window_width), m_window_height(window_height), m_window_title(window_title)
@@ -36,10 +38,12 @@ RKEngine::VulkanRenderer::VulkanRenderer(const uint32_t &window_width, const uin
   create_instance();
   create_debug_messenger();
   pick_physical_device();
+  create_logical_device();
 }
 
 RKEngine::VulkanRenderer::~VulkanRenderer()
 {
+  destroy_logical_device();
   destroy_debug_messenger();
   destroy_instance();
   destroy_window();
@@ -180,6 +184,51 @@ void RKEngine::VulkanRenderer::pick_physical_device()
   }
 }
 
+void RKEngine::VulkanRenderer::create_logical_device()
+{
+  size_t graphics_queue_family_index = find_queue_family_index(m_physical_device, VK_QUEUE_GRAPHICS_BIT).value();
+
+  VkDeviceQueueCreateInfo queue_create_info = {};
+  queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+  queue_create_info.queueFamilyIndex = graphics_queue_family_index;
+  queue_create_info.queueCount = 1;
+
+  float queue_priority = 1.0f;
+  queue_create_info.pQueuePriorities = &queue_priority;
+
+  VkPhysicalDeviceFeatures device_features = {};
+  std::vector<const char *> validation_layers = {"VK_LAYER_KHRONOS_validation"};
+
+
+  VkDeviceCreateInfo create_info = {};
+  create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+  create_info.pQueueCreateInfos = &queue_create_info;
+  create_info.queueCreateInfoCount = 1;
+  create_info.pEnabledFeatures = &device_features;
+  create_info.enabledExtensionCount = 0;
+  if (enable_validation_layers)
+  {
+    create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+    create_info.ppEnabledLayerNames = validation_layers.data();
+  }
+  else
+  {
+    create_info.enabledLayerCount = 0;
+  }
+
+  if (vkCreateDevice(m_physical_device, &create_info, nullptr, &m_device) != VK_SUCCESS)
+  {
+    throw std::runtime_error("Failed to create logical device!");
+  }
+
+  vkGetDeviceQueue(m_device, graphics_queue_family_index, 0, &m_graphics_queue);
+}
+
+void RKEngine::VulkanRenderer::destroy_logical_device()
+{
+  vkDestroyDevice(m_device, nullptr);
+}
+
 const std::vector<const char *> get_required_extensions()
 {
   uint32_t extension_count = 0;
@@ -300,12 +349,25 @@ const bool is_device_suitable(VkPhysicalDevice device)
   vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families.data());
 
   bool correct_device_type = device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && device_features.geometryShader;
-
-  bool has_graphics_queue = std::any_of(queue_families.begin(), queue_families.end(),
-                                        [](const VkQueueFamilyProperties &queue_family)
-                                        {
-                                          return queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT;
-                                        });
+  bool has_graphics_queue = find_queue_family_index(device, VK_QUEUE_GRAPHICS_BIT).has_value();
 
   return correct_device_type && has_graphics_queue;
+}
+
+const std::optional<size_t> find_queue_family_index(VkPhysicalDevice device, VkQueueFlagBits queue_flag)
+{
+  uint32_t queue_family_count = 0;
+  vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
+  std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+  vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families.data());
+
+  for (size_t i = 0; i < queue_families.size(); i++)
+  {
+    if (queue_families[i].queueFlags & queue_flag == queue_flag)
+    {
+      return i;
+    }
+  }
+
+  return std::nullopt;
 }
