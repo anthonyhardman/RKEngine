@@ -29,6 +29,7 @@ add_library(RKEngine STATIC
   ${PROJECT_SOURCE_DIR}/src/renderer.cpp
   ${PROJECT_SOURCE_DIR}/src/renderer_factory.cpp
   ${PROJECT_SOURCE_DIR}/src/vulkan_renderer.cpp
+  ${PROJECT_SOURCE_DIR}/src/vulkan_validation.cpp
 )
 
 target_include_directories(

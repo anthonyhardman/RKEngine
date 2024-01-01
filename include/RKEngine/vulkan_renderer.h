@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "renderer.h"
+#include "vulkan_validation.h"
 
 namespace RKEngine
 {
@@ -27,14 +28,12 @@ namespace RKEngine
     VkPhysicalDevice m_physical_device = VK_NULL_HANDLE;
     VkDevice m_device;
     VkQueue m_graphics_queue;
-    VkDebugUtilsMessengerEXT m_debug_messenger;
+    VulkanValidation m_validation;
 
     void create_window();
     void destroy_window();
     void create_instance();
     void destroy_instance();
-    void create_debug_messenger();
-    void destroy_debug_messenger();
     std::vector<VkPhysicalDevice> get_list_of_physical_devices();
     void pick_physical_device();
     void create_logical_device();
