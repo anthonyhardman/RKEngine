@@ -2,6 +2,8 @@
 #include <string>
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
+#include <vector>
+
 #include "renderer.h"
 
 namespace RKEngine
@@ -22,6 +24,9 @@ namespace RKEngine
     std::string m_window_title;
 
     VkInstance m_instance;
+    VkPhysicalDevice m_physical_device = VK_NULL_HANDLE;
+    VkDevice m_device;
+    VkQueue m_graphics_queue;
     VkDebugUtilsMessengerEXT m_debug_messenger;
 
     void create_window();
@@ -30,5 +35,7 @@ namespace RKEngine
     void destroy_instance();
     void create_debug_messenger();
     void destroy_debug_messenger();
+    std::vector<VkPhysicalDevice> get_list_of_physical_devices();
+    void pick_physical_device();
   };
 }

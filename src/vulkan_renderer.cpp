@@ -27,16 +27,16 @@ VkResult create_debug_utils_messenger_ext(VkInstance instance,
 void destroy_debug_utils_messenger_ext(VkInstance instance,
                                        VkDebugUtilsMessengerEXT debug_messenger,
                                        const VkAllocationCallbacks *p_allocator);
-
+const bool is_device_suitable(VkPhysicalDevice device);
 
 RKEngine::VulkanRenderer::VulkanRenderer(const uint32_t &window_width, const uint32_t window_height, const std::string &window_title)
-  : m_window_width(window_width), m_window_height(window_height), m_window_title(window_title)
+    : m_window_width(window_width), m_window_height(window_height), m_window_title(window_title)
 {
   create_window();
   create_instance();
   create_debug_messenger();
+  pick_physical_device();
 }
-
 
 RKEngine::VulkanRenderer::~VulkanRenderer()
 {
@@ -44,7 +44,6 @@ RKEngine::VulkanRenderer::~VulkanRenderer()
   destroy_instance();
   destroy_window();
 }
-
 
 void RKEngine::VulkanRenderer::create_window()
 {
@@ -137,7 +136,6 @@ void RKEngine::VulkanRenderer::destroy_debug_messenger()
   destroy_debug_utils_messenger_ext(m_instance, m_debug_messenger, nullptr);
 }
 
-
 void RKEngine::VulkanRenderer::draw()
 {
   glfwPollEvents();
@@ -146,6 +144,40 @@ void RKEngine::VulkanRenderer::draw()
 bool RKEngine::VulkanRenderer::window_should_close()
 {
   return glfwWindowShouldClose(m_window);
+}
+
+std::vector<VkPhysicalDevice> RKEngine::VulkanRenderer::get_list_of_physical_devices()
+{
+  uint32_t device_count = 0;
+  vkEnumeratePhysicalDevices(m_instance, &device_count, nullptr);
+  if (device_count == 0)
+  {
+    throw std::runtime_error("Failed to find GPUs with Vulkan support!");
+  }
+
+  std::vector<VkPhysicalDevice> devices(device_count);
+  vkEnumeratePhysicalDevices(m_instance, &device_count, devices.data());
+
+  return devices;
+}
+
+void RKEngine::VulkanRenderer::pick_physical_device()
+{
+  std::vector<VkPhysicalDevice> devices = get_list_of_physical_devices();
+
+  for (const auto &device : devices)
+  {
+    VkPhysicalDeviceProperties device_properties;
+    VkPhysicalDeviceFeatures device_features;
+    vkGetPhysicalDeviceProperties(device, &device_properties);
+    vkGetPhysicalDeviceFeatures(device, &device_features);
+
+    if (is_device_suitable(device))
+    {
+      m_physical_device = device;
+      break;
+    }
+  }
 }
 
 const std::vector<const char *> get_required_extensions()
@@ -253,4 +285,27 @@ void destroy_debug_utils_messenger_ext(VkInstance instance,
   {
     func(instance, debug_messenger, p_allocator);
   }
+}
+
+const bool is_device_suitable(VkPhysicalDevice device)
+{
+  VkPhysicalDeviceProperties device_properties;
+  VkPhysicalDeviceFeatures device_features;
+  vkGetPhysicalDeviceProperties(device, &device_properties);
+  vkGetPhysicalDeviceFeatures(device, &device_features);
+
+  uint32_t queue_family_count = 0;
+  vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
+  std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+  vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families.data());
+
+  bool correct_device_type = device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && device_features.geometryShader;
+
+  bool has_graphics_queue = std::any_of(queue_families.begin(), queue_families.end(),
+                                        [](const VkQueueFamilyProperties &queue_family)
+                                        {
+                                          return queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT;
+                                        });
+
+  return correct_device_type && has_graphics_queue;
 }
