@@ -24,6 +24,11 @@ void destroy_debug_utils_messenger_ext(VkInstance instance,
 
 bool RKEngine::VulkanValidation::check_validation_layer_support() const
 {
+  if (!enable_validation_layers)
+  {
+    return true;
+  }
+
   uint32_t layer_count;
   vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
@@ -174,4 +179,14 @@ void destroy_debug_utils_messenger_ext(VkInstance instance,
   {
     func(instance, debug_messenger, p_allocator);
   }
+}
+
+std::vector<const char *> RKEngine::VulkanValidation::get_validation_extensions() const
+{
+  if (!enable_validation_layers)
+  {
+    return {};
+  }
+  
+  return {VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
 }

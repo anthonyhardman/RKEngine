@@ -14,6 +14,7 @@ namespace RKEngine
     void setup_device_creation_validation(VkDeviceCreateInfo &create_info) const;
     void create_debug_messenger(VkInstance &instance);
     void destroy_debug_messenger(VkInstance &instance);
+    std::vector<const char *> get_validation_extensions() const;
 
   private:
     VkDebugUtilsMessengerEXT m_debug_messenger;
